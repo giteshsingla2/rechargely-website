@@ -1,0 +1,13 @@
+{
+  "name": "recharge-website",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Mobile recharge plan comparison site with a small backend that stores recharge requests.",
+  "scripts": {
+    "start": "node server/server.js",
+    "start:env": "node --env-file=.env server/server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
