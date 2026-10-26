@@ -4,6 +4,11 @@ const rupees = n => '₹' + n.toLocaleString('en-IN');
 const rupeesPerDay = n => '₹' + n.toFixed(2);
 const validityText = p => p.days ? `${p.days} days` : p.validity;
 
+// Google Analytics event. Never pass personal data (name, mobile, PIN) here.
+function track(name, params) {
+  if (typeof gtag === 'function') gtag('event', name, params);
+}
+
 function el(html) {
   const t = document.createElement('template');
   t.innerHTML = html.trim();
@@ -91,6 +96,11 @@ function renderPlans(op) {
   tabsEl.addEventListener('click', e => {
     const tab = e.target.closest('.tab');
     if (tab) show(tab.dataset.cat);
+  });
+  listEl.addEventListener('click', e => {
+    const link = e.target.closest('a.btn');
+    const plan = link && findPlan(new URL(link.href).searchParams.get('plan'));
+    if (plan) track('select_plan', { operator: plan.op, plan_id: plan.id, value: plan.price, currency: 'INR' });
   });
   show(cats[0].id);
 }
@@ -200,6 +210,7 @@ function initDetails() {
         throw new Error(data.error || 'Could not save your details.');
       }
       delete request.website;
+      track('generate_lead', { operator: plan.op, plan_id: plan.id, value: plan.price, currency: 'INR' });
       try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...request, id: data.id })); } catch {}
       location.href = '/recharge-details-saved';
     } catch (err) {
@@ -220,8 +231,14 @@ function initSuccess() {
   try { req = JSON.parse(sessionStorage.getItem(STORAGE_KEY)); } catch {}
   const plan = req && findPlan(req.plan);
 
-  document.querySelectorAll('[data-play]').forEach(a => { a.href = SITE.playStoreUrl; });
-  document.querySelectorAll('[data-appstore]').forEach(a => { a.href = SITE.appStoreUrl; });
+  document.querySelectorAll('[data-play]').forEach(a => {
+    a.href = SITE.playStoreUrl;
+    a.addEventListener('click', () => track('app_download_click', { store: 'google_play' }));
+  });
+  document.querySelectorAll('[data-appstore]').forEach(a => {
+    a.href = SITE.appStoreUrl;
+    a.addEventListener('click', () => track('app_download_click', { store: 'app_store' }));
+  });
 
   const box = document.getElementById('saved-details');
   if (!plan) { box.hidden = true; return; }
